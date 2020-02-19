@@ -264,14 +264,14 @@ if (dog: DogCount === 'Bobic') {
 Пример:
 
 ```typescript
-enum DogCount {
+enum DogName {
     Bobic = 'Bobic',
     Juchka = 'Juchka',
     Barbos = 'Barbos',
     Kashtanka = 'Kashtanka'
 }
 
-function foo(dog: DogCount) {
+function foo(dog: keyof typeof DogName) {
     if (dog === 'Bobic') {
         // do something
     }
@@ -392,6 +392,73 @@ const pipeline: PipelineStatusExtra = {
 Теперь в `PipelineStatusExtra` все свойства должны быть строками и есть статус деплоя.
 
 Таким образом можно собирать свои собственные типы, не трогая уже существующие.
+
+## Conditional Types (Условные типы)
+
+Conditional Types умеет определять тип сущности по какому либо условию.
+
+```typescript
+enum CatNames {
+    Barsik = 'Barsik',
+    Murka = 'Murka'
+}
+
+enum DogNames {
+    Juchka = 'Juchka',
+    Barbos = 'Barbos'
+}
+
+interface Cat {
+    name: keyof typeof CatNames,
+    makeMau: () => void
+}
+
+interface Dog {
+    name: keyof typeof DogNames,
+    makeGaf: () => void
+}
+
+class MyDog implements Dog {
+    constructor(public name: keyof typeof DogNames) {}
+
+    makeGaf() {
+        console.log('Gaf');
+    }
+}
+
+class MyCat implements Cat {
+    constructor(public name: keyof typeof CatNames) {}
+
+    makeMau() {
+        console.log('Mau');
+    }
+}
+
+declare function getPetName
+    <T extends Dog | Cat>
+    (pet: T): T extends Cat ? keyof typeof CatNames : keyof typeof DogNames
+
+getPetName(new MyCat('Barsik'));
+getPetName(new MyDog('Juchka'));
+```
+
+Наваял код выше, теперь с этим нужно как-то разобраться.
+
+Что есть.
+- Перчисление имен собак
+- Перчисление имен котов
+- Интерфейс котов
+- Интерфейс собак
+- Отельный кот, принадлежащий интерфейсу котов
+- Отельная собака, принадлежащая интерфейсу собак
+- Функция, которая возвращает имя петомца.
+
+Самое интересное тут - это функция, которая может частично предсказать, что она вернет нам в зависимости от объекта, который мы ей передаем. Она вернет нам одно из множества имен котов, если мы передадим ей кота, либо одно из множества имен собак, если мы передадим ей собаку.
+
+Еще интересно. Если мы захотим создать собаку с именем кота - то TS нам не даст это сделать. Т.к. в конструкторе мы гарантируем, что собака будет создана только с именем собаки. Аналогично и с котами.
+
+### Distributive conditional types (Распределительные условные типы)
+
 
 ## Полезная фигня, которую я нарыл
 - Автоген типов https://github.com/Microsoft/dts-gen
