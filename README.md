@@ -459,6 +459,23 @@ getPetName(new MyDog('Juchka'));
 
 ### Distributive conditional types (Распределительные условные типы)
 
+По сути просто перемешивание объединения типов с условными типами.
+
+```typescript
+type ArrayFilter<T> = T extends any[] ? T : never;
+
+type StringsOrNumbers = ArrayFilter<string | number | string[] | number[]>;
+```
+
+В итоге в `StringsOrNumbers` будет либо массив строк, либо массив чисел. Т.к для всех, что не является массивом, переденных в generic, будет never.
+
 
 ## Полезная фигня, которую я нарыл
 - Автоген типов https://github.com/Microsoft/dts-gen
+
+## Ресурсы
+- Оф.документация по TS https://www.typescriptlang.org/docs/handbook/advanced-types.html
+- Про TS 3.7 https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#optional-chaining
+- Про utility types https://www.typescriptlang.org/docs/handbook/utility-types.html
+- Про Enum https://www.typescriptlang.org/docs/handbook/enums.html#union-enums-and-enum-member-types
+- Нашел интересный сайт со статьями по фронту https://frontend-stuff.com/blog/conditional-types/
