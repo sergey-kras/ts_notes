@@ -32,7 +32,7 @@ interface Animal {
     ...
 }
 
-interface Dog extends Animal{
+interface Dog extends Animal {
     ...
 }
 
@@ -68,7 +68,7 @@ const bobic: Dog | Animal = {
 
 ## Type Guards and Differentiating Types
 
-Т.к. Мы можем получить доступ к тем методам/свойствам объекта, которые гарантированно у него есть, нужно как - то проверять наличие этих сущность. Делается это следующим образом.
+Т.к. Мы можем получить доступ к тем методам/свойствам объекта, которые гарантированно у него есть, нужно как - то проверять наличие этих сущностей. Делается это следующим образом.
 
 ```typescript
 interface Animal {
@@ -141,6 +141,7 @@ function some(foo: number | string): number {
 ```
 
 ### instanceof type guards (Защита типов через instanceof)
+
 instanceof применяется, когда нам ужно узнать, к какому классу принадлежит объект. instanceof использует функцию конструктора.
 
 ```typescript
@@ -161,6 +162,7 @@ function isBobic(pet: any): pet is Bobic {
 ## Nullable types
 
 ### Optional Chaining (Необязательные цепочки в TypeScript 3.7)
+
 Бывает, что возникают ошибки, когда мы пытаемся получить доступ к свойству/методу, по пути через необязательное свойство и можем наткнуться на ошибку.
 
 Например:
@@ -177,7 +179,7 @@ function(some: Some) {
 }
 ```
 
-Простое решение. В ts версии 3.7 появились необязательные цепочки, которые можно использовать вместо цепочки условий в if.
+Простое решение. В ts версии 3.7 появились необязательные цепочки, которые можно использовать вместо цепочки условий в if-ах.
 
 ```typescript
 interface Some {
@@ -243,6 +245,153 @@ if (dog: DogName === 'Bobic') {
 
 Если в условии будет имя не из литерала - то ts ругнется, т.к. вы типе гарантировано должно быть что - то из списка строк.
 
+## Numeric Literal Types (Числовые литеральные типы)
+
+1 в 1, как и строковые, поэтому только пример, чтобы знать, что такое есть.
+
+```typescript
+type DogCount = 0 | 1 | 1 | 2 | 3 | 5 | 8;
+
+if (dog: DogCount === 'Bobic') {
+    // do something
+}
+```
+
+## Enum Member Types (Перечисления типов)
+
+Используются, когда нужно при помощи констант задать набор каких либо значений. Например полезно, когда нам нужно распарсить объект и мы заранее знаем его ключи. 
+
+Пример:
+
+```typescript
+enum DogCount {
+    Bobic = 'Bobic',
+    Juchka = 'Juchka',
+    Barbos = 'Barbos',
+    Kashtanka = 'Kashtanka'
+}
+
+function foo(dog: DogCount) {
+    if (dog === 'Bobic') {
+        // do something
+    }
+}
+```
+
+Аналогично с числовыми. Но по-умолчанию значения ключей инкрементируются автоматически.
+
+```typescript
+enum LogLevel {
+    Error = 0,
+    Warning, // 1 
+    Info, // 2
+}
+
+function makeLog(logLevel: LogLevel) {
+    if (logLevel === LogLevel.Error) {
+        // do something
+    }
+}
+```
+
+## Discriminated Unions
+
+Выше в примерах уже встречалось. По сути это просто тип с логическим оператором "или", который говорит, что сущность является одним из какого - то набора типов.
+
+```typescript
+type Pet = Animal | Dog;
+
+function isAnimal(pet: Pet): pet is Animal {
+    return 'weight' in pet;
+}
+```
+
+## Index types (Индексные типы)
+
+Полезны, когда нужно протипизировать сущности, имена которых задаются динамически.
+
+```typescript
+function pluck<T, K extends keyof T>(o: T, propertyNames: K[]): T[K][] {
+    return propertyNames.map(n => o[n]);
+}
+
+interface Car {
+    manufacturer: string;
+    model: string;
+    year: number;
+}
+let taxi: Car = {
+    manufacturer: 'Toyota',
+    model: 'Camry',
+    year: 2014
+};
+
+let makeAndModel: string[] = pluck(taxi, ['manufacturer', 'model']);
+```
+
+Что круто. Теперб в функцию pick мы можем передавать только определенные строки в массиве, которые зависят от передаваемого первым аргументом объекта. Минус непредсказуемое поведение.
+
+## Mapped types (Сопоставленные типы)
+
+Стоит использовать, когда нам нужно взять какой либо интерфейс и немного его поменять. Например сделать все поля необязательными или приватными / публичными / защищенными и т д. Либо у всех полей сделать другой тип. Выглядит все это следующим образом.
+
+```typescript
+type Readonly<T> = {
+    readonly [P in keyof T]: T[P];
+}
+
+type Partial<T> = {
+    [P in keyof T]?: T[P];
+}
+```
+
+Так же данный механизм может помочь создавать свои типы.
+
+```typescript
+type PipelineStages = 'build' | 'pushArtifacts' | 'unitTests' | 'integrationTests' | 'uiTests';
+
+type PipelineStatus = {
+    [K in PipelineStages]: boolean
+}
+
+const pipeline: PipelineStatus = {
+    build: true,
+    pushArtifacts: true,
+    unitTests: false,
+    integrationTests: true,
+    uiTests: true
+};
+```
+
+В итоге переменная `pipeline` типа `PipelineStatus` должна содержать только те свойства, которые строчно описаны в `PipelineStages` и должны быть либо `true`, либо `false`.
+
+Так, а если мы в другой части приложения хотим, чтобы pipeline хранил какую то текстовую информацию вместе true и false и хотим добавить статус деплоя?
+
+Делаем следующее:
+```typescript
+type PipelineStages = 'build' | 'pushArtifacts' | 'unitTests' | 'integrationTests' | 'uiTests';
+
+type PipelineStatus = {
+    [K in PipelineStages]: boolean
+}
+
+type PipelineStatusExtra = {
+    [K in keyof PipelineStatus]: string
+} & { deploy: string }
+
+const pipeline: PipelineStatusExtra = {
+    build: 'string',
+    pushArtifacts: 'string',
+    unitTests: 'string',
+    integrationTests: 'string',
+    uiTests: 'string',
+    deploy: 'string'
+};
+```
+
+Теперь в `PipelineStatusExtra` все свойства должны быть строками и есть статус деплоя.
+
+Таким образом можно собирать свои собственные типы, не трогая уже существующие.
 
 ## Полезная фигня, которую я нарыл
 - Автоген типов https://github.com/Microsoft/dts-gen
